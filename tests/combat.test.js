@@ -1,0 +1,15 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {Match,roster} from '../docs/combat.js';
+const tick=(m,n=60,a={},b={})=>{for(let i=0;i<n;i++)m.step(1/60,a,b);};
+const ready=(a=0,b=1)=>{const m=new Match(a,b,()=>.5);m.intro=0;return m;};
+test('intro prevents actions and damage',()=>{const m=new Match();assert.equal(m.attack(0,'punch'),false);tick(m,60,{punch:true});assert.equal(m.f[1].hp,100);});
+test('a punch hits once, distant punches miss',()=>{const m=ready();m.f[1].x=335;m.attack(0,'punch');tick(m,22);assert.equal(m.f[1].hp,94);tick(m,20);assert.equal(m.f[1].hp,94);m.f[1].x=700;m.attack(0,'punch');tick(m,30);assert.equal(m.f[1].hp,94);});
+test('crouching avoids high punch',()=>{const m=ready();m.f[1].x=335;m.attack(0,'punch');tick(m,30,{}, {down:true});assert.equal(m.f[1].hp,100);});
+test('low kick bypasses standing block but low guard stops it',()=>{for(const down of [false,true]){const m=ready();m.f[1].x=340;m.f[0].low=true;m.attack(0,'kick');tick(m,35,{}, {down,block:true});assert.equal(m.f[1].hp,down?100:92);}});
+test('air attacks require high guard',()=>{const m=ready();m.f[0].z=70;m.f[1].x=340;m.attack(0,'kick');tick(m,10,{}, {down:true,block:true});assert.ok(m.f[1].hp<100);});
+test('special costs energy and respects cooldown',()=>{const m=ready();assert.equal(m.attack(0,'super'),false);m.f[0].energy=100;assert.equal(m.attack(0,'super'),true);assert.equal(m.f[0].energy,40);tick(m,90);assert.equal(m.attack(0,'power'),false);});
+test('goat travels, damages once, and disappears',()=>{const m=ready(3,0);m.attack(0,'power');tick(m,120);assert.equal(m.f[1].hp,83);assert.equal(m.shots.length,0);});
+test('head tackle and hand keep their range limits',()=>{const m=ready(2,0);m.f[0].energy=100;m.attack(0,'super');tick(m,90);assert.equal(m.f[1].hp,100);m.f[0].cd=0;m.f[0].energy=100;m.f[1].x=390;m.attack(0,'super');tick(m,90);assert.equal(m.f[1].hp,73);});
+test('best of three ends and round resets preserve wins',()=>{const m=ready();m.f[1].hp=0;tick(m,1);assert.equal(m.f[0].wins,1);tick(m,155);assert.equal(m.round,2);assert.equal(m.f[0].wins,1);assert.equal(m.f[1].hp,100);m.intro=0;m.f[1].hp=0;tick(m,160);assert.equal(m.over,true);assert.equal(m.f[0].wins,2);});
+test('all character pairs simulate with finite bounded state',()=>{for(let a=0;a<roster.length;a++)for(let b=0;b<roster.length;b++){const m=ready(a,b);for(let i=0;i<3600;i++){m.step(1/60,{axis:Math.sign(m.f[1].x-m.f[0].x),punch:i%20===0,kick:i%45===0,power:i%180===0,super:i%360===0});for(const p of m.f){assert.ok(Number.isFinite(p.x)&&p.x>=0&&p.x<=960);assert.ok(p.hp>=0&&p.hp<=100);assert.ok(p.energy>=0&&p.energy<=100);}}}});
