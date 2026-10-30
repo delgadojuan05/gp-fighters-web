@@ -10,7 +10,7 @@ async function unlock(){try{audio??=new (window.AudioContext||window.webkitAudio
 function sound(n){if(muted||!audio||audio.state!=='running'||!buffers[n])return;const source=audio.createBufferSource(),gain=audio.createGain();source.buffer=buffers[n];gain.gain.value=n==='Whoosh'?.17:.32;source.connect(gain).connect(audio.destination);source.start();}
 document.querySelectorAll('.sound').forEach(b=>b.addEventListener('click',()=>{muted=!muted;try{localStorage.setItem('gp-muted',muted?'1':'0');}catch{}unlock();soundLabels();}));
 function clearInput(){held.clear();keys.clear();taps.clear();document.querySelectorAll('.held').forEach(b=>b.classList.remove('held'));}
-function show(next){screen=next;clearInput();for(const id of ['home','select','arena'])$(id).hidden=id!==next;if(next==='select')updateSelection();}
+function show(next){screen=next;document.body.classList.toggle('playing',next==='arena');clearInput();for(const id of ['home','select','arena'])$(id).hidden=id!==next;if(next==='select')updateSelection();}
 function sprite(c,sheet,pose,x,y,h,face=1,alpha=1){const u=uv[sheet]?.[pose],im=images[sheet];if(!u||!im)return;const k=h/450*(u[8]??1);c.save();c.translate(x,y);c.scale(face,1);c.globalAlpha=alpha;c.drawImage(im,u[0]*im.width,u[1]*im.height,u[2]*im.width,u[3]*im.height,-u[6]*k,-u[7]*k,u[4]*k,u[5]*k);c.restore();}
 function updateSelection(){const p=roster[selected];$('fighter-name').textContent=p.name.toUpperCase();$('fighter-tag').textContent=p.tag;$('power-name').textContent=p.power;$('super-name').textContent=p.super;
  document.querySelectorAll('.fighter-card').forEach((b,i)=>b.setAttribute('aria-pressed',String(i===selected)));
@@ -23,14 +23,43 @@ $('enter').onclick=()=>{unlock();show('select');sound('Select');};$('back-home')
 const keyMap={KeyA:'left',ArrowLeft:'left',KeyD:'right',ArrowRight:'right',KeyS:'down',ArrowDown:'down',KeyW:'jump',ArrowUp:'jump',KeyF:'punch',KeyG:'kick',KeyH:'block',KeyR:'power',KeyT:'super'};
 document.addEventListener('keydown',e=>{if(e.code==='Escape'&&screen==='arena'){e.preventDefault();if(!paused)openPause();else if(!match.over)$('resume').click();return;}if(screen==='home'&&!$('enter').disabled&&e.code==='Enter'){$('enter').click();return;}if(screen==='arena'&&keyMap[e.code]){e.preventDefault();keys.add(keyMap[e.code]);if(!e.repeat)taps.add(keyMap[e.code]);}});
 document.addEventListener('keyup',e=>{if(keyMap[e.code])keys.delete(keyMap[e.code]);});
-for(const button of document.querySelectorAll('[data-key]')){
- button.addEventListener('pointerdown',e=>{e.preventDefault();if(paused)return;unlock();button.setPointerCapture(e.pointerId);held.set(e.pointerId,button.dataset.key);taps.add(button.dataset.key);button.classList.add('held');});
- const release=e=>{held.delete(e.pointerId);if(![...held.values()].includes(button.dataset.key))button.classList.remove('held');};
- button.addEventListener('click',e=>{if(e.detail===0&&!paused)taps.add(button.dataset.key);});
- button.addEventListener('pointerup',release);button.addEventListener('pointercancel',release);button.addEventListener('lostpointercapture',release);button.addEventListener('contextmenu',e=>e.preventDefault());
+// Each finger owns its input; the movement thumb can slide without lifting.
+const dpad=document.querySelector('.dpad');
+function updateHeld(){
+ const active=new Set([...held.values()].flat());
+ document.querySelectorAll('[data-key]').forEach(b=>b.classList.toggle('held',active.has(b.dataset.key)));
 }
+function direction(e){
+ const r=dpad.getBoundingClientRect(),x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height;
+ if(x<-.2||x>1.2||y<-.2||y>1.2)return [];
+ const out=[];
+ if(x<.35)out.push('left');else if(x>.65)out.push('right');
+ if(y>.64)out.push('down');else if(y<.32)out.push('jump');
+ return out;
+}
+function releasePointer(e){held.delete(e.pointerId);updateHeld();}
+dpad.addEventListener('pointerdown',e=>{
+ e.preventDefault();if(paused)return;unlock();dpad.setPointerCapture(e.pointerId);
+ const input=direction(e);held.set(e.pointerId,input);input.forEach(k=>taps.add(k));updateHeld();
+});
+dpad.addEventListener('pointermove',e=>{if(!held.has(e.pointerId))return;e.preventDefault();held.set(e.pointerId,direction(e));updateHeld();});
+for(const name of ['pointerup','pointercancel','lostpointercapture'])dpad.addEventListener(name,releasePointer);
+for(const button of document.querySelectorAll('.actions [data-key]')){
+ button.addEventListener('pointerdown',e=>{e.preventDefault();if(paused)return;unlock();button.setPointerCapture(e.pointerId);held.set(e.pointerId,[button.dataset.key]);taps.add(button.dataset.key);updateHeld();});
+ for(const name of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(name,releasePointer);
+}
+for(const button of document.querySelectorAll('[data-key]')){
+ button.addEventListener('click',e=>{if(e.detail===0&&!paused)taps.add(button.dataset.key);});
+}
+// Safari: suppress page gestures only on the fighting surface, keeping menus accessible.
+for(const name of ['touchstart','touchmove','touchend','gesturestart','gesturechange','gestureend','dblclick','contextmenu']){
+ $('arena').addEventListener(name,e=>{
+  if(e.target.closest('.controls, #game')&&e.cancelable)e.preventDefault();
+ },{passive:false});
+}
+window.addEventListener('orientationchange',()=>{clearInput();if(screen==='arena')openPause();});
 window.addEventListener('blur',()=>{clearInput();openPause();});document.addEventListener('visibilitychange',()=>{if(document.hidden){clearInput();openPause();}last=performance.now();accumulator=0;});
-function controls(){const down=new Set([...keys,...held.values(),...taps]);taps.clear();return {axis:Number(down.has('right'))-Number(down.has('left')),down:down.has('down'),jump:down.has('jump'),block:down.has('block'),punch:down.has('punch'),kick:down.has('kick'),power:down.has('power'),super:down.has('super')};}
+function controls(){const down=new Set([...keys,...[...held.values()].flat(),...taps]);taps.clear();return {axis:Number(down.has('right'))-Number(down.has('left')),down:down.has('down'),jump:down.has('jump'),block:down.has('block'),punch:down.has('punch'),kick:down.has('kick'),power:down.has('power'),super:down.has('super')};}
 function text(c,t,x,y,size=18,color='#fff',align='left'){c.fillStyle=color;c.font=`900 ${size}px Arial, sans-serif`;c.textAlign=align;c.fillText(t,x,y);}
 function roundRect(c,x,y,w,h,r,fill){c.fillStyle=fill;c.beginPath();c.roundRect?c.roundRect(x,y,w,h,r):c.rect(x,y,w,h);c.fill();}
 function pose(p){let sheet=roster[p.character].sheet;let n=0;
