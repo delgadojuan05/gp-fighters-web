@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="es-UY"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#07182a"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="description" content="GP Fighters: prueba arcade para jugar desde el celular. Elegí tu personaje y entrá a la pelea."><title>GP FIGHTERS · Prueba web</title><link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css?v=2"></head>
+<html lang="es-UY"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#07182a"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="description" content="GP Fighters: prueba arcade para jugar desde el celular. Elegí tu personaje y entrá a la pelea."><title>GP FIGHTERS · Prueba web</title><link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css?v=3"></head>
 <body>
  <main id="app">
   <section id="home" class="screen home">
-   <div class="topline"><span class="edition">GP / ARCADE</span><span class="pill">PRUEBA WEB 02</span></div>
+   <div class="topline"><span class="edition">GP / ARCADE</span><span class="pill">PRUEBA WEB 03</span></div>
    <div class="home-bottom"><p class="eyebrow">HECHO PARA LA BANDA. LISTO PARA EL CELU.</p><button class="primary" id="enter" disabled>CARGANDO…</button><p id="loading" role="status">Preparando la pelea</p><p class="small">4 peleadores · Contra la computadora · Mejor de 3</p></div>
   </section>
   <section id="select" class="screen selection" hidden>
@@ -16,12 +16,12 @@
    <canvas id="game" aria-label="Pelea GP Fighters" tabindex="0"></canvas>
    <div class="arena-top"><button class="quiet" id="pause" aria-label="Pausar la pelea">Ⅱ PAUSA</button><span id="round-status" role="status">ROUND 1</span><button class="quiet sound" aria-label="Activar o desactivar sonido">SONIDO: SÍ</button></div>
    <div class="controls" aria-label="Controles táctiles">
-    <div class="dpad"><button data-key="jump" class="up" aria-label="Saltar">↑</button><button data-key="left" aria-label="Mover a la izquierda">←</button><button data-key="down" aria-label="Agacharse">↓</button><button data-key="right" aria-label="Mover a la derecha">→</button></div>
+    <div class="dpad" aria-label="Palanca de movimiento: deslizá para caminar, saltar o agacharte"><span class="stick-knob" aria-hidden="true"></span><button data-key="jump" class="up" aria-label="Saltar">↑</button><button data-key="left" aria-label="Mover a la izquierda">←</button><button data-key="down" aria-label="Agacharse">↓</button><button data-key="right" aria-label="Mover a la derecha">→</button></div>
     <div class="move-hint">ABAJO + PATADA = BARRIDA<br>ABAJO + DEFENSA = GUARDIA BAJA</div>
-    <div class="actions"><button data-key="punch">GOLPE<small>F</small></button><button data-key="kick">PATADA<small>G</small></button><button data-key="block">DEFENSA<small>H</small></button><button data-key="power" class="power">PODER<small>R · 20</small></button><button data-key="super" class="super">ESPECIAL<small>T · 60</small></button></div>
+    <div class="actions"><button data-key="punch" aria-label="Golpe">X<small>GOLPE</small></button><button data-key="kick" aria-label="Patada">A<small>PATADA</small></button><button data-key="block" aria-label="Defensa">B<small>DEFENSA</small></button><button data-key="power" class="power" aria-label="Poder">Y<small>PODER</small></button><button data-key="super" class="super" aria-label="Especial">★<small>ESPECIAL</small></button></div>
    </div>
    <div class="rotate"><span>↻</span><h2>Girá el celular</h2><p>La pelea se juega en horizontal.<br>Desactivá el bloqueo de rotación si hace falta.</p><button class="quiet" id="portrait-menu">VOLVER AL MENÚ</button></div>
    <div id="modal" class="modal" hidden><div class="modal-card"><p class="eyebrow" id="modal-kicker">TOMATE UN RESPIRO</p><h2 id="modal-title">PAUSA</h2><p id="modal-copy">La pelea te espera.</p><button class="primary" id="resume">SEGUIR JUGANDO</button><button class="secondary" id="rematch">REVANCHA</button><button class="quiet" id="choose">CAMBIAR PERSONAJE</button></div></div>
   </section>
- </main><script type="module" src="app.js?v=2"></script>
+ </main><script type="module" src="app.js?v=3"></script>
 </body></html>
